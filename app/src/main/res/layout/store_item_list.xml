@@ -47,11 +47,11 @@
         android:layout_height="wrap_content"
         android:layout_alignBottom="@+id/ivStore"
         android:layout_marginStart="4dp"
-        android:layout_marginBottom="68dp"
+        android:layout_marginBottom="61dp"
         android:layout_toEndOf="@+id/ivStore"
-        android:text="Mvideo: not available"
+        android:text="mvideo_app: available"
         android:textColor="#000000"
-        android:textSize="20sp"
+        android:textSize="18sp"
         android:textStyle="bold" />
 
 </RelativeLayout>

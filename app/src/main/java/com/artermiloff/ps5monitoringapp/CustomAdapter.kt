@@ -1,12 +1,14 @@
 package com.artermiloff.ps5monitoringapp
 
 import android.content.Context
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.TextView
+import java.util.*
 
 class CustomAdapter(private val context: Context, private val storeInfos: List<StoreInfo>) :
     BaseAdapter() {
@@ -36,7 +38,14 @@ class CustomAdapter(private val context: Context, private val storeInfos: List<S
             viewHolder = view.tag as ViewHolder
         }
 
+        println(viewHolder.storeNameAndStatus)
+
         val store: StoreInfo = getItem(position) as StoreInfo
+        if(store.status.toLowerCase().endsWith("not available")){
+            viewHolder.storeNameAndStatus.setTextColor(Color.RED)
+        }else{
+            viewHolder.storeNameAndStatus.setTextColor(Color.GREEN)
+        }
         viewHolder.storeNameAndStatus.text = "${store.name}: ${store.status}"
         viewHolder.ivImage.setImageResource(store.imgCode)
         viewHolder.storeLastShip.text = "Last shipped: ${store.lastShip}"

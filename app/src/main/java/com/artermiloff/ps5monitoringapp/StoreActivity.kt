@@ -52,11 +52,11 @@ class StoreActivity : AppCompatActivity() {
             if (!isDiskEd) {
                 continue
             }
-            val status = el.child(0).className().split(" ")[1].replace("-", " ")
-            val lastStocked = el.child(1).child(0).text().split(" ", limit = 3)[2]
-            val lastChanged = el.child(1).child(1).text().split(" ", limit = 2)[1]
-            val link = el.attr("href")
-            val name = link.substring(link.lastIndexOf("/") + 1)
+            val status = el.child(0).className().split(" ")[1].replace("-", " ").trim()
+            val lastStocked = el.child(1).child(0).text().split(" ", limit = 3)[2].trim()
+            val lastChanged = el.child(1).child(1).text().split(" ", limit = 2)[1].trim()
+            val link = el.attr("href").trim()
+            val name = link.substring(link.lastIndexOf("/") + 1).trim()
             var imgId = resources.getIdentifier(name.replace("-", "_"), "drawable", packageName)
             infos.add(StoreInfo(name, link, status, lastStocked, lastChanged, imgId))
             println(infos.last())
