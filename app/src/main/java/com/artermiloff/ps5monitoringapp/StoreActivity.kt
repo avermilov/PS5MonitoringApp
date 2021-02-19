@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.text.SpannableString
 import android.text.method.LinkMovementMethod
 import android.text.util.Linkify
-import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -22,35 +21,26 @@ import java.util.*
 
 class StoreActivity : AppCompatActivity() {
     private val ps5statusLink = "https://ps5status.ru"
-    private var webContent: String? = null
-    private var refreshButton: Button? = null
-    private var getStatusButton: Button? = null
-    private var dataRefreshed = false
+    private var dataFetched = false
     private var storeInfos: MutableList<StoreInfo> = mutableListOf()
     private var myListView: ListView? = null
     private var customAdapter: CustomAdapter? = null
+    private var timer = Timer()
+    private var updateInterval: Long = 5_000;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        refreshButton = findViewById(R.id.refreshButton)
-        getStatusButton = findViewById(R.id.getStatusButton)
         myListView = findViewById(R.id.listView)
 
         customAdapter = CustomAdapter(applicationContext, storeInfos)
         myListView!!.adapter = customAdapter
 
-
-        requestContent(ps5statusLink)
-        refreshButton!!.setOnClickListener {
-            refreshContent()
-        }
-
-        getStatusButton!!.setOnClickListener {
-            fetchContent()
-        }
-
+        timer.scheduleAtFixedRate(object : TimerTask() {
+            override fun run() {
+                updateContent(ps5statusLink)
+            }
+        }, 0, updateInterval)
     }
 
     private fun parse(content: String): List<StoreInfo> {
@@ -67,18 +57,24 @@ class StoreActivity : AppCompatActivity() {
             val lastChanged = el.child(1).child(1).text().split(" ", limit = 2)[1]
             val link = el.attr("href")
             val name = link.substring(link.lastIndexOf("/") + 1)
-            var imgId = resources.getIdentifier(name, "drawable", packageName)
+            var imgId = resources.getIdentifier(name.replace("-", "_"), "drawable", packageName)
             infos.add(StoreInfo(name, link, status, lastStocked, lastChanged, imgId))
             println(infos.last())
         }
         return infos
     }
 
-    private fun requestContent(url: String) {
+    private fun updateContent(url: String) {
         val q = Volley.newRequestQueue(this)
+        dataFetched = false;
         val stringRequest =
             StringRequest(
-                Request.Method.GET, url, { response -> webContent = response },
+                Request.Method.GET, url, { response ->
+                    val newInfos = parse(response!!)
+                    storeInfos.clear()
+                    storeInfos.addAll(newInfos)
+                    customAdapter!!.notifyDataSetChanged()
+                },
                 {
                     Toast.makeText(
                         applicationContext,
@@ -88,34 +84,6 @@ class StoreActivity : AppCompatActivity() {
                     println(it.message)
                 })
         q.add(stringRequest)
-    }
-
-    private fun refreshContent() {
-        if (webContent != null) {
-            storeInfos.clear()
-            storeInfos.addAll(parse(webContent!!))
-            customAdapter!!.notifyDataSetChanged()
-            dataRefreshed = true
-            refreshButton!!.visibility = View.INVISIBLE
-            getStatusButton!!.visibility = View.VISIBLE
-        }
-    }
-
-    private fun fetchContent() {
-        val toast =
-            Toast.makeText(
-                applicationContext,
-                "Press the 'Refresh' button to update the store list.",
-                Toast.LENGTH_SHORT
-            )
-        toast.setGravity(Gravity.CENTER, 0, 0)
-        toast.show()
-        requestContent(ps5statusLink)
-        refreshButton!!.visibility = View.VISIBLE
-        storeInfos.clear()
-        dataRefreshed = false
-        customAdapter!!.notifyDataSetChanged()
-        getStatusButton!!.visibility = View.INVISIBLE
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
