@@ -41,7 +41,7 @@ class CustomAdapter(private val context: Context, private val storeInfos: List<S
         println(viewHolder.storeNameAndStatus)
 
         val store: StoreInfo = getItem(position) as StoreInfo
-        if(store.status.toLowerCase().endsWith("not available")){
+        if(store.status.toLowerCase(Locale.ROOT).endsWith("not available")){
             viewHolder.storeNameAndStatus.setTextColor(Color.RED)
         }else{
             viewHolder.storeNameAndStatus.setTextColor(Color.GREEN)

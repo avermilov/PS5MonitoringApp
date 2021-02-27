@@ -2,13 +2,9 @@ package com.artermiloff.ps5monitoringapp
 
 import android.os.Bundle
 import android.text.Html
-import android.text.SpannableString
 import android.text.method.LinkMovementMethod
-import android.text.util.Linkify
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
-import android.widget.Button
 import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
@@ -27,7 +23,7 @@ class StoreActivity : AppCompatActivity() {
     private var myListView: ListView? = null
     private var customAdapter: CustomAdapter? = null
     private var timer = Timer()
-    private var updateInterval: Long = 5_000;
+    private var updateInterval: Long = 5_000
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,7 +54,7 @@ class StoreActivity : AppCompatActivity() {
             val lastChanged = el.child(1).child(1).text().split(" ", limit = 2)[1].trim()
             val link = el.attr("href").trim()
             val name = link.substring(link.lastIndexOf("/") + 1).trim()
-            var imgId = resources.getIdentifier(name.replace("-", "_"), "drawable", packageName)
+            val imgId = resources.getIdentifier(name.replace("-", "_"), "drawable", packageName)
             infos.add(StoreInfo(name, link, status, lastStocked, lastChanged, imgId))
             println(infos.last())
         }
@@ -67,7 +63,7 @@ class StoreActivity : AppCompatActivity() {
 
     private fun updateContent(url: String) {
         val q = Volley.newRequestQueue(this)
-        dataFetched = false;
+        dataFetched = false
         val stringRequest =
             StringRequest(
                 Request.Method.GET, url, { response ->
@@ -150,6 +146,6 @@ class StoreActivity : AppCompatActivity() {
         d.show()
 
         (d.findViewById<TextView>(android.R.id.message) as TextView).movementMethod =
-            LinkMovementMethod.getInstance();
+            LinkMovementMethod.getInstance()
     }
 }

@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-
     <TextView
         android:id="@+id/tvLastCheck"
         android:layout_width="wrap_content"
@@ -15,7 +14,7 @@
         android:layout_marginStart="6dp"
         android:layout_marginBottom="6dp"
         android:layout_toEndOf="@+id/ivStore"
-        android:text="Last checked: 15:05:24 21.04.2021"
+        android:text=""
         android:textColor="#000000"
         android:textSize="18sp" />
 
@@ -27,7 +26,7 @@
         android:layout_marginStart="6dp"
         android:layout_marginBottom="35dp"
         android:layout_toEndOf="@+id/ivStore"
-        android:text="Last checked: 15:05:24 21.04.2021"
+        android:text=""
         android:textColor="#000000"
         android:textSize="18sp" />
 
@@ -39,7 +38,8 @@
         android:layout_alignParentTop="true"
         android:layout_marginStart="10dp"
         android:layout_marginTop="0dp"
-        app:srcCompat="@drawable/dns" />
+        app:srcCompat="@drawable/dns"
+        android:contentDescription="@string/store_logo" />
 
     <TextView
         android:id="@+id/tvName"
@@ -49,7 +49,7 @@
         android:layout_marginStart="4dp"
         android:layout_marginBottom="61dp"
         android:layout_toEndOf="@+id/ivStore"
-        android:text="mvideo_app: available"
+        android:text=""
         android:textColor="#000000"
         android:textSize="18sp"
         android:textStyle="bold" />
