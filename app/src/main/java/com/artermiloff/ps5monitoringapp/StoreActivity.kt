@@ -1,6 +1,7 @@
 package com.artermiloff.ps5monitoringapp
 
 import android.os.Bundle
+import android.text.Html
 import android.text.SpannableString
 import android.text.method.LinkMovementMethod
 import android.text.util.Linkify
@@ -71,6 +72,7 @@ class StoreActivity : AppCompatActivity() {
             StringRequest(
                 Request.Method.GET, url, { response ->
                     val newInfos = parse(response!!)
+                    newInfos.sortedBy { it.status != "not available" }
                     storeInfos.clear()
                     storeInfos.addAll(newInfos)
                     customAdapter!!.notifyDataSetChanged()
@@ -81,7 +83,6 @@ class StoreActivity : AppCompatActivity() {
                         "Unable to fetch data. Try again later or check your internet connection.",
                         Toast.LENGTH_LONG
                     ).show()
-                    println(it.message)
                 })
         q.add(stringRequest)
     }
@@ -101,19 +102,26 @@ class StoreActivity : AppCompatActivity() {
                     ).versionName
                 }\r\n\n" +
                         "Author - Ermilov Artemiy Vasilevich\r\n\n" +
-                        "All rights taken from us. 2021-2077.", "OK"
+                        "All rights taken from us. 2021-2077.",
+                "OK",
+                icon = R.drawable.info
             )
             R.id.show_help -> createAndShowDialog(
                 "How to use",
-                "This is an app for getting up to date info on the stock availability of the disk version of PS5.\r\n\n" +
-                        "To refresh the current update request, press the \'Refresh\' button.\r\n\n" +
-                        "To send another update request, press the \'Get Status\' button.",
-                "GOT IT"
+                "This is an app for getting up to date info on the stock availability of the disk version of PS5 in Moscow, Russia.\r\n\n" +
+                        "The list shows each store status individually, including last date of status change, last update date, current availability," +
+                        "and store name.\r\n\n" +
+                        "If you would like to go to the product page of any store, simply open the optional menu, press \'Store Links\' and choose " +
+                        "needed store.",
+                "GOT IT",
+                icon = R.drawable.qmark
             )
             R.id.show_links -> createAndShowDialog(
                 "Store Links",
-                "List of stores currently being tracked and their links",
-                "OK", storeInfos
+                "",
+                "OK",
+                storeInfos,
+                R.drawable.cursor
             )
         }
         return super.onOptionsItemSelected(item)
@@ -124,26 +132,24 @@ class StoreActivity : AppCompatActivity() {
         message: String,
         buttonText: String,
         stores: List<StoreInfo> = listOf(),
+        icon: Int,
     ) {
-        val dialog = AlertDialog.Builder(this)
-        var mes = message
-        if (stores.isNotEmpty()) {
+        var mes = ""
+        if (stores.isEmpty()) {
+            mes = message
+        } else {
             for (store in stores) {
-                mes += "\n${store.name}:\n${store.link}"
+                mes += "<a href=\"${store.link}\">${store.name}</a><br>"
             }
         }
-        var textView = TextView(this)
+        val d = AlertDialog.Builder(this)
+            .setPositiveButton(buttonText, null)
+            .setTitle(title)
+            .setIcon(icon)
+            .setMessage(if (stores.isEmpty()) mes else Html.fromHtml(mes)).create()
+        d.show()
 
-        val spannableString = SpannableString(mes)
-        Linkify.addLinks(spannableString, Linkify.WEB_URLS)
-        textView.text = spannableString
-        textView.movementMethod = LinkMovementMethod.getInstance()
-//        dialog.setMessage(mes)
-        dialog.setTitle(title)
-        dialog.setIcon(R.mipmap.ic_launcher_round)
-        dialog.setNeutralButton(buttonText) { dia, _ -> dia.dismiss() }
-        dialog.setView(textView)
-        val alertDialog = dialog.create()
-        alertDialog.show()
+        (d.findViewById<TextView>(android.R.id.message) as TextView).movementMethod =
+            LinkMovementMethod.getInstance();
     }
 }

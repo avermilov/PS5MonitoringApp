@@ -3,10 +3,10 @@
 
     <item
         android:id="@+id/show_info"
-        android:title="Help" />
+        android:title="About" />
     <item
         android:id="@+id/show_help"
-        android:title="About" />
+        android:title="Help" />
     <item
         android:id="@+id/show_links"
         android:title="Store Links" />
