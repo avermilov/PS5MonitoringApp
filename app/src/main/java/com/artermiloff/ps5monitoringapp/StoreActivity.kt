@@ -1,26 +1,31 @@
 package com.artermiloff.ps5monitoringapp
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.os.Build
 import android.os.Bundle
 import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.CheckBox
 import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import com.android.volley.Request
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import org.jsoup.Jsoup
 import java.util.*
 
+
 class StoreActivity : AppCompatActivity() {
     private val ps5statusLink = "https://ps5status.ru"
-    private var dataFetched = false
+    private var prevStoresFetched: MutableList<StoreInfo> = mutableListOf()
     private var storesFetched: MutableList<StoreInfo> = mutableListOf()
     private var storeInfos: MutableList<StoreInfo> = mutableListOf()
     private var myListView: ListView? = null
@@ -39,9 +44,19 @@ class StoreActivity : AppCompatActivity() {
 
         timer.scheduleAtFixedRate(object : TimerTask() {
             override fun run() {
-                updateContent(ps5statusLink)
+                updateContent()
             }
         }, 0, updateInterval)
+
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
+            val nc = NotificationChannel(
+                "My Notification",
+                "My Notification",
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
+            val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(nc)
+        }
     }
 
     private fun parse(content: String): MutableList<StoreInfo> {
@@ -54,23 +69,48 @@ class StoreActivity : AppCompatActivity() {
             val lastStocked = el.child(1).child(0).text().split(" ", limit = 3)[2].trim()
             val lastChanged = el.child(1).child(1).text().split(" ", limit = 2)[1].trim()
             val link = el.attr("href").trim()
-            val name = link.substring(link.lastIndexOf("/") + 1).trim()
-            val imgId = resources.getIdentifier(name.replace("-", "_").replace("_digital", ""), "drawable", packageName)
+            val name = link.substring(link.lastIndexOf("/") + 1).trim().replace("_", " `")
+            val imgId = resources.getIdentifier(
+                name.replace("-", "_").replace("_digital", ""),
+                "drawable",
+                packageName
+            )
             infos.add(StoreInfo(name, link, status, lastStocked, lastChanged, imgId, isDiskEd))
             Log.d("STORE", infos.last().toString())
         }
         return infos
     }
 
-    private fun updateContent(url: String) {
+    private fun saveNewAndCheckForChanges(newStores: MutableList<StoreInfo>) {
+        var notificationText = ""
+        for (store in newStores) {
+            val prevStore = prevStoresFetched.find { it.name == store.name }
+            if (prevStore != null && prevStore.status != store.status) {
+                notificationText += "New ${store.name} status: ${store.status}\n"
+            }
+        }
+
+        if (notificationText.isNotEmpty()) {
+            val builder = NotificationCompat.Builder(this, "My Notification")
+            builder.setContentTitle("Changes in availability status!")
+                .setContentText(notificationText)
+                .setSmallIcon(R.drawable.cursor)
+                .setAutoCancel(true)
+
+            val managerCompat = NotificationManagerCompat.from(this)
+            managerCompat.notify(1, builder.build())
+        }
+
+        prevStoresFetched = newStores
+    }
+
+    private fun updateContent() {
         val q = Volley.newRequestQueue(this)
-        dataFetched = false
         val stringRequest =
             StringRequest(
-                Request.Method.GET, url, { response ->
+                Request.Method.GET, ps5statusLink, { response ->
                     storesFetched = parse(response!!)
-//                    val checkbox = findViewById<CheckBox>(R.id.showDisk)
-//                    Log.d("CHECKBOX", (checkbox == null).toString())
+                    saveNewAndCheckForChanges(storesFetched)
                     val newInfos =
                         storesFetched.filter { it.diskEdition == diskOnly }
                             .sortedBy { it.status != "not available" }
@@ -109,8 +149,8 @@ class StoreActivity : AppCompatActivity() {
             )
             R.id.show_help -> createAndShowDialog(
                 "How to use",
-                "This is an app for getting up to date info on the stock availability of the disk version of PS5 in Moscow, Russia.\r\n\n" +
-                        "The list shows each store status individually, including last date of status change, last update date, current availability," +
+                "This is an app for getting up to date info on the stock availability of the PS5 console in Moscow, Russia.\r\n\n" +
+                        "The list shows each store status individually, including last date of status change, last refresh date, current availability," +
                         "and store name.\r\n\n" +
                         "If you would like to go to the product page of any store, simply open the optional menu, press \'Store Links\' and choose " +
                         "needed store.",
