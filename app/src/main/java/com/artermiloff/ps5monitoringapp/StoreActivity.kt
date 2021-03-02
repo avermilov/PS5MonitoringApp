@@ -3,8 +3,10 @@ package com.artermiloff.ps5monitoringapp
 import android.os.Bundle
 import android.text.Html
 import android.text.method.LinkMovementMethod
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.CheckBox
 import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
@@ -19,11 +21,13 @@ import java.util.*
 class StoreActivity : AppCompatActivity() {
     private val ps5statusLink = "https://ps5status.ru"
     private var dataFetched = false
+    private var storesFetched: MutableList<StoreInfo> = mutableListOf()
     private var storeInfos: MutableList<StoreInfo> = mutableListOf()
     private var myListView: ListView? = null
     private var customAdapter: CustomAdapter? = null
     private var timer = Timer()
     private var updateInterval: Long = 5_000
+    private var diskOnly = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,23 +44,20 @@ class StoreActivity : AppCompatActivity() {
         }, 0, updateInterval)
     }
 
-    private fun parse(content: String): List<StoreInfo> {
+    private fun parse(content: String): MutableList<StoreInfo> {
         val doc = Jsoup.parse(content)
         val elements = doc.getElementsByClass("table-data")
         val infos = mutableListOf<StoreInfo>()
         for (el in elements) {
-            val isDiskEd = el.child(0).text().trim().toUpperCase(Locale.ROOT) == "PS5"
-            if (!isDiskEd) {
-                continue
-            }
+            val isDiskEd = "PS5" == el.child(0).text().trim().toUpperCase(Locale.ROOT)
             val status = el.child(0).className().split(" ")[1].replace("-", " ").trim()
             val lastStocked = el.child(1).child(0).text().split(" ", limit = 3)[2].trim()
             val lastChanged = el.child(1).child(1).text().split(" ", limit = 2)[1].trim()
             val link = el.attr("href").trim()
             val name = link.substring(link.lastIndexOf("/") + 1).trim()
-            val imgId = resources.getIdentifier(name.replace("-", "_"), "drawable", packageName)
-            infos.add(StoreInfo(name, link, status, lastStocked, lastChanged, imgId))
-            println(infos.last())
+            val imgId = resources.getIdentifier(name.replace("-", "_").replace("_digital", ""), "drawable", packageName)
+            infos.add(StoreInfo(name, link, status, lastStocked, lastChanged, imgId, isDiskEd))
+            Log.d("STORE", infos.last().toString())
         }
         return infos
     }
@@ -67,8 +68,12 @@ class StoreActivity : AppCompatActivity() {
         val stringRequest =
             StringRequest(
                 Request.Method.GET, url, { response ->
-                    val newInfos = parse(response!!)
-                    newInfos.sortedBy { it.status != "not available" }
+                    storesFetched = parse(response!!)
+//                    val checkbox = findViewById<CheckBox>(R.id.showDisk)
+//                    Log.d("CHECKBOX", (checkbox == null).toString())
+                    val newInfos =
+                        storesFetched.filter { it.diskEdition == diskOnly }
+                            .sortedBy { it.status != "not available" }
                     storeInfos.clear()
                     storeInfos.addAll(newInfos)
                     customAdapter!!.notifyDataSetChanged()
@@ -119,9 +124,22 @@ class StoreActivity : AppCompatActivity() {
                 storeInfos,
                 R.drawable.cursor
             )
+            R.id.showDisk -> {
+                val newCheckStatus = !item.isChecked
+                diskOnly = newCheckStatus
+                item.isChecked = newCheckStatus
+                val newInfos =
+                    storesFetched.filter { it.diskEdition == diskOnly }
+                        .sortedBy { it.status != "not available" }
+                storeInfos.clear()
+                storeInfos.addAll(newInfos)
+                customAdapter!!.notifyDataSetChanged()
+
+            }
         }
         return super.onOptionsItemSelected(item)
     }
+
 
     private fun createAndShowDialog(
         title: String,

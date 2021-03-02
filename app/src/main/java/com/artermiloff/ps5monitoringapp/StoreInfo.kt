@@ -7,4 +7,5 @@ data class StoreInfo(
     val lastShip: String,
     val lastCheck: String,
     val imgCode: Int,
+    val diskEdition: Boolean,
 )
