@@ -18,7 +18,7 @@ class PS5StatusParser(private val context: Context) : Parser {
             val link = el.attr("href").trim()
             val name = link.substring(link.lastIndexOf("/") + 1).trim().replace("_", " ")
             val imgId = context.resources.getIdentifier(
-                name.replace("-", "_").replace("_digital", ""),
+                name.replace("-", "_").replace(" digital", ""),
                 "drawable",
                 context.packageName
             )
