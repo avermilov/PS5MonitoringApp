@@ -6,7 +6,6 @@ import android.os.Build
 import android.os.Bundle
 import android.text.Html
 import android.text.method.LinkMovementMethod
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.ListView
@@ -28,11 +27,12 @@ class StoreActivity : AppCompatActivity() {
     private var prevStoresFetched: MutableList<StoreInfo> = mutableListOf()
     private var storesFetched: MutableList<StoreInfo> = mutableListOf()
     private var storeInfos: MutableList<StoreInfo> = mutableListOf()
-    private var myListView: ListView? = null
-    private var customAdapter: CustomAdapter? = null
+    private lateinit var myListView: ListView
+    private lateinit var customAdapter: CustomAdapter
     private var timer = Timer()
     private var updateInterval: Long = 5_000
     private var diskOnly = true
+    private var parser: Parser = PS5StatusParser(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,7 +40,7 @@ class StoreActivity : AppCompatActivity() {
         myListView = findViewById(R.id.listView)
 
         customAdapter = CustomAdapter(applicationContext, storeInfos)
-        myListView!!.adapter = customAdapter
+        myListView.adapter = customAdapter
 
         timer.scheduleAtFixedRate(object : TimerTask() {
             override fun run() {
@@ -57,28 +57,6 @@ class StoreActivity : AppCompatActivity() {
             val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(nc)
         }
-    }
-
-    private fun parse(content: String): MutableList<StoreInfo> {
-        val doc = Jsoup.parse(content)
-        val elements = doc.getElementsByClass("table-data")
-        val infos = mutableListOf<StoreInfo>()
-        for (el in elements) {
-            val isDiskEd = "PS5" == el.child(0).text().trim().toUpperCase(Locale.ROOT)
-            val status = el.child(0).className().split(" ")[1].replace("-", " ").trim()
-            val lastStocked = el.child(1).child(0).text().split(" ", limit = 3)[2].trim()
-            val lastChanged = el.child(1).child(1).text().split(" ", limit = 2)[1].trim()
-            val link = el.attr("href").trim()
-            val name = link.substring(link.lastIndexOf("/") + 1).trim().replace("_", " `")
-            val imgId = resources.getIdentifier(
-                name.replace("-", "_").replace("_digital", ""),
-                "drawable",
-                packageName
-            )
-            infos.add(StoreInfo(name, link, status, lastStocked, lastChanged, imgId, isDiskEd))
-            Log.d("STORE", infos.last().toString())
-        }
-        return infos
     }
 
     private fun saveNewAndCheckForChanges(newStores: MutableList<StoreInfo>) {
@@ -109,14 +87,14 @@ class StoreActivity : AppCompatActivity() {
         val stringRequest =
             StringRequest(
                 Request.Method.GET, ps5statusLink, { response ->
-                    storesFetched = parse(response!!)
+                    storesFetched = parser.parse(response!!)
                     saveNewAndCheckForChanges(storesFetched)
                     val newInfos =
                         storesFetched.filter { it.diskEdition == diskOnly }
                             .sortedBy { it.status != "not available" }
                     storeInfos.clear()
                     storeInfos.addAll(newInfos)
-                    customAdapter!!.notifyDataSetChanged()
+                    customAdapter.notifyDataSetChanged()
                 },
                 {
                     Toast.makeText(
@@ -173,7 +151,7 @@ class StoreActivity : AppCompatActivity() {
                         .sortedBy { it.status != "not available" }
                 storeInfos.clear()
                 storeInfos.addAll(newInfos)
-                customAdapter!!.notifyDataSetChanged()
+                customAdapter.notifyDataSetChanged()
 
             }
         }
