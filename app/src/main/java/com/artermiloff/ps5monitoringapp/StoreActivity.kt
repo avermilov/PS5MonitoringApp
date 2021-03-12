@@ -151,7 +151,6 @@ class StoreActivity : AppCompatActivity() {
                 storeInfos.clear()
                 storeInfos.addAll(newInfos)
                 customAdapter.notifyDataSetChanged()
-
             }
         }
         return super.onOptionsItemSelected(item)
